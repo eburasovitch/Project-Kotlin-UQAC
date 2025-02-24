@@ -17,11 +17,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.CoroutineScope
+import com.example.todocontextuelapp.data.FileRoutineRepository
 
 @Composable
 fun SetupNavGraph(
     navController: NavHostController,
-    viewModel: RoutineViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    viewModel: RoutineViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    repository: FileRoutineRepository,
+    coroutineScope: CoroutineScope
 ) {
     val routineList by viewModel.allRoutines.collectAsState(initial = emptyList())
 
@@ -43,7 +47,9 @@ fun SetupNavGraph(
                 },
                 onDeleteClicked = { routine ->
                     viewModel.deleteRoutine(routine)
-                }
+                },
+                repository = repository,
+                coroutineScope = coroutineScope
             )
         }
 

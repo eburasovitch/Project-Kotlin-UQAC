@@ -6,6 +6,7 @@ data class Routine(
     val description: String,
     val date: String,
     val hour: Int,
-    val amPm: String,      // si tu veux gérer AM/PM
-    val frequency: String
+    val amPm: String,
+    val frequency: String,
+    val completed: Boolean = false
 )
