@@ -15,6 +15,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.todocontextuelapp.data.Routine
+import com.example.todocontextuelapp.ui.utils.showDatePicker
+import com.example.todocontextuelapp.ui.utils.showTimePicker
+import com.example.todocontextuelapp.utils.TimeNotificationHelper
 
 @Composable
 fun EditScreen(
@@ -28,10 +31,14 @@ fun EditScreen(
     var description by remember { mutableStateOf(routine.description) }
     var date by remember { mutableStateOf(routine.date) }
     var hour by remember { mutableStateOf(routine.hour) }
-    var amPm by remember { mutableStateOf(if (routine.hour < 12) "AM" else "PM") }
+    var amPm by remember { mutableStateOf(routine.amPm) }
     var frequency by remember { mutableStateOf(routine.frequency) }
+    var category by remember { mutableStateOf(routine.category) }
+    var priority by remember { mutableStateOf(routine.priority) }
 
     val frequencies = listOf("Just for this time", "Every day", "Once a week")
+    val categories = listOf("General", "Work", "Leisure", "Health")
+    val priorities = listOf("Low", "Medium", "High")
 
     Scaffold(
         topBar = {
@@ -70,8 +77,7 @@ fun EditScreen(
                     colors = TextFieldDefaults.textFieldColors(
                         backgroundColor = Color(0xFFF5F5F5),
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent
                     )
                 )
 
@@ -87,17 +93,14 @@ fun EditScreen(
                     colors = TextFieldDefaults.textFieldColors(
                         backgroundColor = Color(0xFFF5F5F5),
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent
                     )
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = "Select a date",
-                    fontWeight = FontWeight.Bold
-                )
+                // Sélection de la date
+                Text(text = "Select a date", fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -116,20 +119,20 @@ fun EditScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = "Pick an hour",
-                    fontWeight = FontWeight.Bold
-                )
+                // Sélection de l'heure
+                Text(text = "Pick an hour", fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 12.dp)
                         .background(Color(0xFFF5F5F5), shape = RoundedCornerShape(8.dp))
                         .border(1.dp, Color(0xFFB0B0B0), shape = RoundedCornerShape(8.dp))
-                        .clickable { showTimePicker(context) { selectedTime ->
-                            hour = selectedTime
-                            amPm = if (hour < 12) "AM" else "PM"
-                        } }
+                        .clickable {
+                            showTimePicker(context) { selectedTime ->
+                                hour = selectedTime
+                                amPm = if (hour < 12) "AM" else "PM"
+                            }
+                        }
                         .padding(16.dp)
                 ) {
                     Text(
@@ -141,12 +144,11 @@ fun EditScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                var expanded by remember { mutableStateOf(false) }
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                // Fréquence
+                var freqExpanded by remember { mutableStateOf(false) }
+                Box(modifier = Modifier.fillMaxWidth()) {
                     Button(
-                        onClick = { expanded = true },
+                        onClick = { freqExpanded = true },
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = Color.Black,
                             contentColor = Color.White
@@ -156,25 +158,81 @@ fun EditScreen(
                         Text(frequency)
                     }
                     DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
+                        expanded = freqExpanded,
+                        onDismissRequest = { freqExpanded = false },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         frequencies.forEach { item ->
                             DropdownMenuItem(onClick = {
                                 frequency = item
-                                expanded = false
+                                freqExpanded = false
                             }) {
                                 Text(item)
                             }
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Catégorie
+                Text(text = "Category", fontWeight = FontWeight.Bold)
+                var catExpanded by remember { mutableStateOf(false) }
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { catExpanded = true },
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray, contentColor = Color.White),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(category)
+                    }
+                    DropdownMenu(
+                        expanded = catExpanded,
+                        onDismissRequest = { catExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        categories.forEach { cat ->
+                            DropdownMenuItem(onClick = {
+                                category = cat
+                                catExpanded = false
+                            }) {
+                                Text(cat)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Priorité
+                Text(text = "Priority", fontWeight = FontWeight.Bold)
+                var priExpanded by remember { mutableStateOf(false) }
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { priExpanded = true },
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray, contentColor = Color.White),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(priority)
+                    }
+                    DropdownMenu(
+                        expanded = priExpanded,
+                        onDismissRequest = { priExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        priorities.forEach { pri ->
+                            DropdownMenuItem(onClick = {
+                                priority = pri
+                                priExpanded = false
+                            }) {
+                                Text(pri)
+                            }
+                        }
+                    }
+                }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 Button(
                     onClick = {
                         val updated = routine.copy(
@@ -183,9 +241,15 @@ fun EditScreen(
                             date = date,
                             hour = hour,
                             amPm = amPm,
-                            frequency = frequency
+                            frequency = frequency,
+                            category = category,
+                            priority = priority
                         )
                         onUpdateRoutine(updated)
+
+                        // Re-programmer la notification horaire
+                        val helper = TimeNotificationHelper(context)
+                        helper.scheduleRoutineNotification(updated)
                     },
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = Color.Black,
@@ -212,12 +276,4 @@ fun EditScreen(
             }
         }
     }
-}
-
-fun showDatePicker(context: Context, onDateSelected: (String) -> Unit) {
-    com.example.todocontextuelapp.ui.utils.showDatePicker(context, onDateSelected)
-}
-
-fun showTimePicker(context: Context, onTimeSelected: (Int) -> Unit) {
-    com.example.todocontextuelapp.ui.utils.showTimePicker(context, onTimeSelected)
 }

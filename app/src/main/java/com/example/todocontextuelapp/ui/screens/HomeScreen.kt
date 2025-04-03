@@ -1,6 +1,5 @@
 package com.example.todocontextuelapp.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,9 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.todocontextuelapp.data.Routine
 import androidx.compose.ui.unit.sp
-import com.example.todocontextuelapp.data.FileRoutineRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -27,36 +23,16 @@ fun HomeScreen(
     onCreateClicked: () -> Unit,
     onEditClicked: (Routine) -> Unit,
     onDeleteClicked: (Routine) -> Unit,
-    repository: FileRoutineRepository,
-    coroutineScope: CoroutineScope
+    onToggleCompletion: (Int, Boolean) -> Unit
 ) {
     Scaffold(
-        topBar = {
-            TopAppBar(
-                backgroundColor = Color.Transparent,
-                elevation = 0.dp
-            ) {
-                Text(
-                    text = "Todo tasks",
-                    color = Color.Black,
-                    style = MaterialTheme.typography.h4.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-            }
-        },
         floatingActionButton = {
-            FloatingActionButton(onClick = onCreateClicked, backgroundColor = Color(0xFF2C2C2C), contentColor = Color.White) {
-                Text("+", fontSize = 24.sp)
+            FloatingActionButton(onClick = onCreateClicked) {
+                Text("+")
             }
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
+        Column(modifier = Modifier.padding(innerPadding)) {
             LazyColumn {
                 items(routines) { routine ->
                     TaskCard(
@@ -64,9 +40,7 @@ fun HomeScreen(
                         onEditClicked = { onEditClicked(routine) },
                         onDeleteClicked = { onDeleteClicked(routine) },
                         onCheckedChange = { isChecked ->
-                            coroutineScope.launch {
-                                repository.toggleRoutineCompletion(routine.id, isChecked)
-                            }
+                            onToggleCompletion(routine.id ?: 0, isChecked)
                         }
                     )
                 }
@@ -82,7 +56,7 @@ fun TaskCard(
     onDeleteClicked: () -> Unit,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    var isCompleted by remember { mutableStateOf(routine.completed) }
+    var checked by remember(routine.id) { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -95,13 +69,11 @@ fun TaskCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
-                    checked = isCompleted,
+                    checked = checked,
                     onCheckedChange = {
-                        isCompleted = it
+                        checked = it
                         onCheckedChange(it)
                     },
                     colors = CheckboxDefaults.colors(
@@ -128,7 +100,6 @@ fun TaskCard(
                 Button(
                     onClick = onEditClicked,
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
-                    border = BorderStroke(1.dp, Color.Black),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .width(60.dp)
@@ -140,7 +111,6 @@ fun TaskCard(
                 Button(
                     onClick = onDeleteClicked,
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color.Red),
-                    border = BorderStroke(1.dp, Color.Black),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .width(60.dp)

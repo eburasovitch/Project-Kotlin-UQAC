@@ -3,41 +3,57 @@ package com.example.todocontextuelapp.ui.screens
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.example.todocontextuelapp.GeofenceHelper
 import com.example.todocontextuelapp.data.Routine
+import com.example.todocontextuelapp.ui.viewmodel.LocationViewModel
 import com.example.todocontextuelapp.ui.viewmodel.RoutineViewModel
+import com.example.todocontextuelapp.utils.TimeNotificationHelper
 import java.util.*
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
-
 
 @Composable
 fun CreateScreen(
-    viewModel: RoutineViewModel = viewModel(),
+    navController: NavController,
+    routineViewModel: RoutineViewModel,
+    locationViewModel: LocationViewModel,
     onCancel: () -> Unit
 ) {
     val context = LocalContext.current
 
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var hour by remember { mutableStateOf(0) }
-    var amPm by remember { mutableStateOf("AM") }
-    var frequency by remember { mutableStateOf("Just for this time") }
+    // Champs de la routine
+    var name by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var date by rememberSaveable { mutableStateOf("") }
+    var hour by rememberSaveable { mutableStateOf(0) }
+    var amPm by rememberSaveable { mutableStateOf("AM") }
+    var frequency by rememberSaveable { mutableStateOf("Just for this time") }
 
+    // Champs supplémentaires : catégorie & priorité
+    var category by rememberSaveable { mutableStateOf("General") }
+    var priority by rememberSaveable { mutableStateOf("Low") }
+
+    // Observations de la latitude/longitude sélectionnées (pour geofence, si besoin)
+    val selectedLatitude by locationViewModel.latitude.collectAsState()
+    val selectedLongitude by locationViewModel.longitude.collectAsState()
+
+    // Listes pour Dropdown
     val frequencies = listOf("Just for this time", "Every day", "Once a week")
+    val categories = listOf("General", "Work", "Leisure", "Health")
+    val priorities = listOf("Low", "Medium", "High")
 
     Scaffold(
         topBar = {
@@ -48,9 +64,7 @@ fun CreateScreen(
                 Text(
                     text = "Create Task",
                     color = Color.Black,
-                    style = MaterialTheme.typography.h4.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style = MaterialTheme.typography.h4.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(start = 16.dp)
                 )
             }
@@ -64,6 +78,7 @@ fun CreateScreen(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
+                // Nom
                 TextField(
                     value = name,
                     onValueChange = { name = it },
@@ -76,11 +91,11 @@ fun CreateScreen(
                     colors = TextFieldDefaults.textFieldColors(
                         backgroundColor = Color(0xFFF5F5F5),
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent
                     )
                 )
 
+                // Description
                 TextField(
                     value = description,
                     onValueChange = { description = it },
@@ -93,24 +108,22 @@ fun CreateScreen(
                     colors = TextFieldDefaults.textFieldColors(
                         backgroundColor = Color(0xFFF5F5F5),
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent
                     )
                 )
 
+                // Sélection de date
                 Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Select a date",
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "Select a date", fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 12.dp)
                         .background(Color(0xFFF5F5F5), shape = RoundedCornerShape(8.dp))
                         .border(1.dp, Color(0xFFB0B0B0), shape = RoundedCornerShape(8.dp))
-                        .clickable { showLocalDatePicker(context) { selectedDate -> date = selectedDate } }
+                        .clickable {
+                            showLocalDatePicker(context) { selectedDate -> date = selectedDate }
+                        }
                         .padding(16.dp)
                 ) {
                     Text(
@@ -120,22 +133,21 @@ fun CreateScreen(
                     )
                 }
 
+                // Sélection d'heure
                 Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Pick an hour",
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "Pick an hour", fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 12.dp)
                         .background(Color(0xFFF5F5F5), shape = RoundedCornerShape(8.dp))
                         .border(1.dp, Color(0xFFB0B0B0), shape = RoundedCornerShape(8.dp))
-                        .clickable { showLocalTimePicker(context) { selectedTime ->
-                            hour = selectedTime
-                            amPm = if (hour < 12) "AM" else "PM"
-                        } }
+                        .clickable {
+                            showLocalTimePicker(context) { selectedTime ->
+                                hour = selectedTime
+                                amPm = if (hour < 12) "AM" else "PM"
+                            }
+                        }
                         .padding(16.dp)
                 ) {
                     Text(
@@ -145,74 +157,157 @@ fun CreateScreen(
                     )
                 }
 
+                // Fréquence
                 Spacer(modifier = Modifier.height(8.dp))
-
-                var expanded by remember { mutableStateOf(false) }
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                var freqExpanded by rememberSaveable { mutableStateOf(false) }
+                Box(modifier = Modifier.fillMaxWidth()) {
                     Button(
-                        onClick = { expanded = true },
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = Color.Black,
-                            contentColor = Color.White
-                        ),
+                        onClick = { freqExpanded = true },
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black, contentColor = Color.White),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(frequency)
                     }
                     DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
+                        expanded = freqExpanded,
+                        onDismissRequest = { freqExpanded = false },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         frequencies.forEach { item ->
                             DropdownMenuItem(onClick = {
                                 frequency = item
-                                expanded = false
+                                freqExpanded = false
                             }) {
                                 Text(item)
                             }
                         }
                     }
                 }
+
+                // Catégorie
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "Category", fontWeight = FontWeight.Bold)
+                var catExpanded by rememberSaveable { mutableStateOf(false) }
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { catExpanded = true },
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray, contentColor = Color.White),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(category)
+                    }
+                    DropdownMenu(
+                        expanded = catExpanded,
+                        onDismissRequest = { catExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        categories.forEach { cat ->
+                            DropdownMenuItem(onClick = {
+                                category = cat
+                                catExpanded = false
+                            }) {
+                                Text(cat)
+                            }
+                        }
+                    }
+                }
+
+                // Priorité
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "Priority", fontWeight = FontWeight.Bold)
+                var priExpanded by rememberSaveable { mutableStateOf(false) }
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { priExpanded = true },
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray, contentColor = Color.White),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(priority)
+                    }
+                    DropdownMenu(
+                        expanded = priExpanded,
+                        onDismissRequest = { priExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        priorities.forEach { pri ->
+                            DropdownMenuItem(onClick = {
+                                priority = pri
+                                priExpanded = false
+                            }) {
+                                Text(pri)
+                            }
+                        }
+                    }
+                }
+
+                // Bouton pour sélectionner la localisation (ouvre MapScreen)
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        // Optionnel : locationViewModel.resetLocation() si souhaité
+                        navController.navigate("map")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Select Location")
+                }
+
+                // Affiche la localisation sélectionnée si existante
+                Spacer(modifier = Modifier.height(8.dp))
+                if (selectedLatitude != null && selectedLongitude != null) {
+                    Text(
+                        text = "Selected location: Lat=${selectedLatitude}, Lon=${selectedLongitude}",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 16.sp
+                    )
+                }
             }
 
+            // Boutons Créer / Annuler
             Row(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Button(
                     onClick = {
                         val newRoutine = Routine(
-                            id = 0,
+                            id = null,
                             name = name,
                             description = description,
                             date = date,
                             hour = hour,
                             amPm = amPm,
-                            frequency = frequency
+                            frequency = frequency,
+                            latitude = selectedLatitude,
+                            longitude = selectedLongitude,
+                            isGeofenceEnabled = (selectedLatitude != null && selectedLongitude != null),
+                            category = category,
+                            priority = priority
                         )
-                        viewModel.addRoutine(newRoutine)
+                        // Insérer en DB
+                        routineViewModel.insertRoutine(newRoutine)
+
+                        // Ajouter la geofence si la localisation est définie
+                        if (newRoutine.isGeofenceEnabled) {
+                            val geofenceHelper = GeofenceHelper(context)
+                            geofenceHelper.addGeofence(newRoutine)
+                        }
+
+                        // Planifier la notification horaire
+                        val timeNotificationHelper = TimeNotificationHelper(context)
+                        timeNotificationHelper.scheduleRoutineNotification(newRoutine)
+
                         onCancel()
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color.Black,
-                        contentColor = Color.White
-                    ),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black, contentColor = Color.White),
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Create the task")
                 }
-
                 Spacer(modifier = Modifier.width(8.dp))
-
                 OutlinedButton(
                     onClick = onCancel,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        backgroundColor = Color.White,
-                        contentColor = Color.Black
-                    ),
-                    border = BorderStroke(1.dp, Color.Gray),
+                    colors = ButtonDefaults.outlinedButtonColors(backgroundColor = Color.White, contentColor = Color.Black),
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Cancel")
@@ -222,6 +317,7 @@ fun CreateScreen(
     }
 }
 
+// Fonctions d’aide
 fun showLocalDatePicker(context: Context, onDateSelected: (String) -> Unit) {
     val calendar = Calendar.getInstance()
     DatePickerDialog(
