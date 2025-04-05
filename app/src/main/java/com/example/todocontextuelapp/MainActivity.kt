@@ -4,57 +4,65 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.Composable
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.example.todocontextuelapp.navigation.SetupNavGraph
+import com.example.todocontextuelapp.presentation.NotificationScreen
 import com.example.todocontextuelapp.ui.theme.TodoContextuelAppTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val requiredPermissions = mutableListOf<String>().apply {
-        add(Manifest.permission.ACCESS_FINE_LOCATION)
-        add(Manifest.permission.ACCESS_COARSE_LOCATION)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            add(Manifest.permission.POST_NOTIFICATIONS)
+    // Callback pour la demande de permission POST_NOTIFICATIONS
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Log.d("MainActivity", "Notification permission granted")
+        } else {
+            Log.d("MainActivity", "Notification permission denied")
         }
     }
 
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) {
-        // Gérer les résultats si besoin
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    // La permission est déjà accordée
+                }
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) -> {
+                    // Afficher une explication et demander la permission
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+                else -> {
+                    // Demander directement la permission
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Vérification des permissions
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val permissionsToRequest = requiredPermissions.filter {
-                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-            }
-            if (permissionsToRequest.isNotEmpty()) {
-                permissionLauncher.launch(permissionsToRequest.toTypedArray())
-            }
-        }
+        requestNotificationPermission()
 
         setContent {
-            MyApp()
-        }
-    }
-
-    @Composable
-    fun MyApp() {
-        val navController = rememberNavController()
-        TodoContextuelAppTheme {
-            SetupNavGraph(navController = navController)
+            TodoContextuelAppTheme {
+                val navController = rememberNavController()
+                SetupNavGraph(navController = navController)
+            }
         }
     }
 }

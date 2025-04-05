@@ -1,5 +1,7 @@
 package com.example.todocontextuelapp.ui.screens
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -15,8 +17,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.todocontextuelapp.data.Routine
-import com.example.todocontextuelapp.ui.utils.showDatePicker
-import com.example.todocontextuelapp.ui.utils.showTimePicker
 import com.example.todocontextuelapp.utils.TimeNotificationHelper
 
 @Composable
@@ -30,7 +30,10 @@ fun EditScreen(
     var name by remember { mutableStateOf(routine.name) }
     var description by remember { mutableStateOf(routine.description) }
     var date by remember { mutableStateOf(routine.date) }
+
+    // On gère l’heure et la minute
     var hour by remember { mutableStateOf(routine.hour) }
+    var minute by remember { mutableStateOf(routine.minute) }
     var amPm by remember { mutableStateOf(routine.amPm) }
     var frequency by remember { mutableStateOf(routine.frequency) }
     var category by remember { mutableStateOf(routine.category) }
@@ -107,11 +110,14 @@ fun EditScreen(
                         .padding(vertical = 12.dp)
                         .background(Color(0xFFF5F5F5), shape = RoundedCornerShape(8.dp))
                         .border(1.dp, Color(0xFFB0B0B0), shape = RoundedCornerShape(8.dp))
-                        .clickable { showDatePicker(context) { selectedDate -> date = selectedDate } }
+                        .clickable {
+                            showEditDatePicker(context, date) { newDate -> date = newDate }
+                        }
                         .padding(16.dp)
                 ) {
+                    val dateText = if (date.isEmpty()) "MM/DD/YYYY" else date
                     Text(
-                        text = if (date.isEmpty()) "MM/DD/YYYY" else date,
+                        text = dateText,
                         color = if (date.isEmpty()) Color.Gray else Color.Black,
                         modifier = Modifier.weight(1f)
                     )
@@ -128,16 +134,25 @@ fun EditScreen(
                         .background(Color(0xFFF5F5F5), shape = RoundedCornerShape(8.dp))
                         .border(1.dp, Color(0xFFB0B0B0), shape = RoundedCornerShape(8.dp))
                         .clickable {
-                            showTimePicker(context) { selectedTime ->
-                                hour = selectedTime
-                                amPm = if (hour < 12) "AM" else "PM"
-                            }
+                            TimePickerDialog(
+                                context,
+                                { _, selectedHour, selectedMinute ->
+                                    hour = selectedHour
+                                    minute = selectedMinute
+                                    amPm = if (selectedHour < 12) "AM" else "PM"
+                                },
+                                12,
+                                0,
+                                false
+                            ).show()
                         }
                         .padding(16.dp)
                 ) {
+                    val displayedHour = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+                    val hourText = String.format("%d:%02d %s", displayedHour, minute, amPm)
                     Text(
-                        text = if (hour == 0) "HH:MM AM/PM" else "$hour $amPm",
-                        color = if (hour == 0) Color.Gray else Color.Black,
+                        text = if (hour == 0 && minute == 0) "HH:MM AM/PM" else hourText,
+                        color = if (hour == 0 && minute == 0) Color.Gray else Color.Black,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -240,6 +255,7 @@ fun EditScreen(
                             description = description,
                             date = date,
                             hour = hour,
+                            minute = minute,
                             amPm = amPm,
                             frequency = frequency,
                             category = category,
@@ -276,4 +292,36 @@ fun EditScreen(
             }
         }
     }
+}
+
+// Petit helper pour réutiliser la logique de DatePicker
+fun showEditDatePicker(context: Context, currentDate: String, onDateSelected: (String) -> Unit) {
+    val calendar = java.util.Calendar.getInstance()
+
+    // Parse la date existante si possible (MM/DD/YYYY)
+    if (currentDate.isNotEmpty()) {
+        val parts = currentDate.split("/")
+        if (parts.size == 3) {
+            val month = parts[0].toIntOrNull()?.minus(1) ?: 0
+            val day = parts[1].toIntOrNull() ?: 1
+            val year = parts[2].toIntOrNull() ?: 2025
+            calendar.set(java.util.Calendar.MONTH, month)
+            calendar.set(java.util.Calendar.DAY_OF_MONTH, day)
+            calendar.set(java.util.Calendar.YEAR, year)
+        }
+    }
+
+    val year = calendar.get(java.util.Calendar.YEAR)
+    val month = calendar.get(java.util.Calendar.MONTH)
+    val day = calendar.get(java.util.Calendar.DAY_OF_MONTH)
+
+    DatePickerDialog(
+        context,
+        { _, selectedYear, selectedMonth, selectedDayOfMonth ->
+            onDateSelected("${selectedMonth + 1}/$selectedDayOfMonth/$selectedYear")
+        },
+        year,
+        month,
+        day
+    ).show()
 }

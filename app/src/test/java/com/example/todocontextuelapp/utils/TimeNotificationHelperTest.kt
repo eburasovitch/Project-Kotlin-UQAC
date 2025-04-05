@@ -45,6 +45,7 @@ class TimeNotificationHelperTest {
             description = "desc",
             date = "01/01/2030",
             hour = 9,
+            minute = 0,
             amPm = "AM",
             frequency = "Just for this time"
         )
@@ -78,6 +79,7 @@ class TimeNotificationHelperTest {
             description = "desc",
             date = "02/01/2030",
             hour = 12,
+            minute = 0,
             amPm = "PM",
             frequency = "Once a week"
         )

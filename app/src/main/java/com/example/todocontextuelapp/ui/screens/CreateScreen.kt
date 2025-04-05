@@ -38,7 +38,10 @@ fun CreateScreen(
     var name by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var date by rememberSaveable { mutableStateOf("") }
+
+    // On sépare désormais l'heure et la minute
     var hour by rememberSaveable { mutableStateOf(0) }
+    var minute by rememberSaveable { mutableStateOf(0) }
     var amPm by rememberSaveable { mutableStateOf("AM") }
     var frequency by rememberSaveable { mutableStateOf("Just for this time") }
 
@@ -143,16 +146,31 @@ fun CreateScreen(
                         .background(Color(0xFFF5F5F5), shape = RoundedCornerShape(8.dp))
                         .border(1.dp, Color(0xFFB0B0B0), shape = RoundedCornerShape(8.dp))
                         .clickable {
-                            showLocalTimePicker(context) { selectedTime ->
-                                hour = selectedTime
-                                amPm = if (hour < 12) "AM" else "PM"
-                            }
+                            // On récupère hourOfDay ET minute
+                            TimePickerDialog(
+                                context,
+                                { _, selectedHour, selectedMinute ->
+                                    hour = selectedHour
+                                    minute = selectedMinute
+                                    // Gère AM/PM
+                                    amPm = if (selectedHour < 12) "AM" else "PM"
+                                },
+                                12, // heure par défaut
+                                0,  // minute par défaut
+                                false
+                            ).show()
                         }
                         .padding(16.dp)
                 ) {
+                    val displayedHour = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+                    val displayedText = if (date.isEmpty() && hour == 0 && minute == 0) {
+                        "HH:MM AM/PM"
+                    } else {
+                        String.format("%d:%02d %s", displayedHour, minute, amPm)
+                    }
                     Text(
-                        text = if (hour == 0) "HH:MM AM/PM" else "$hour $amPm",
-                        color = if (hour == 0) Color.Gray else Color.Black,
+                        text = displayedText,
+                        color = if (hour == 0 && minute == 0) Color.Gray else Color.Black,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -244,10 +262,9 @@ fun CreateScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        // Optionnel : locationViewModel.resetLocation() si souhaité
                         navController.navigate("map")
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Select Location")
                 }
@@ -258,7 +275,7 @@ fun CreateScreen(
                     Text(
                         text = "Selected location: Lat=${selectedLatitude}, Lon=${selectedLongitude}",
                         fontWeight = FontWeight.Medium,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
                     )
                 }
             }
@@ -276,6 +293,7 @@ fun CreateScreen(
                             description = description,
                             date = date,
                             hour = hour,
+                            minute = minute,
                             amPm = amPm,
                             frequency = frequency,
                             latitude = selectedLatitude,
@@ -328,18 +346,5 @@ fun showLocalDatePicker(context: Context, onDateSelected: (String) -> Unit) {
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
         calendar.get(Calendar.DAY_OF_MONTH)
-    ).show()
-}
-
-fun showLocalTimePicker(context: Context, onTimeSelected: (Int) -> Unit) {
-    val calendar = Calendar.getInstance()
-    TimePickerDialog(
-        context,
-        { _, hourOfDay, _ ->
-            onTimeSelected(hourOfDay)
-        },
-        calendar.get(Calendar.HOUR_OF_DAY),
-        0,
-        false
     ).show()
 }

@@ -1,8 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    // On retire le plugin compose Multiplatform
     id("org.jetbrains.kotlin.kapt")
+    // Ajout du plugin Hilt
+    id("dagger.hilt.android.plugin")
 }
 
 android {
@@ -78,40 +79,32 @@ dependencies {
     implementation("com.google.android.material:material:1.8.0")
 
     // -------------------------------
+    // Dagger Hilt & Hilt Navigation Compose
+    // -------------------------------
+    implementation("com.google.dagger:hilt-android:2.44")
+    kapt("com.google.dagger:hilt-android-compiler:2.44")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+
+    // -------------------------------
     // TESTS UNITAIRES
     // -------------------------------
-    // JUnit de base
     testImplementation("junit:junit:4.13.2")
-
-    // Pour LiveData / Flow (InstantTaskExecutorRule)
     testImplementation("androidx.arch.core:core-testing:2.1.0")
-
-    // Mockito (Java)
     testImplementation("org.mockito:mockito-core:4.8.0")
-
-    // Mockito-Kotlin (coWhenever, coVerify, etc.)
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
-
-    // Coroutines test (runBlockingTest, etc.)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
 
     // -------------------------------
     // TESTS INSTRUMENTÉS
     // -------------------------------
-    // JUnit
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    // Espresso
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    // Room testing (in-memory, etc.)
     androidTestImplementation("androidx.room:room-testing:$roomVersion")
 
     // -------------------------------
     // COMPOSE
     // -------------------------------
-    // On applique la BOM via le version catalog (libs.androidx.compose.bom)
     implementation(platform(libs.androidx.compose.bom))
-
-    // Dépendances déclarées dans le version catalog :
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -120,7 +113,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // Dépendances Compose de test
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
@@ -146,9 +138,8 @@ dependencies {
     testImplementation("org.mockito:mockito-core:4.8.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
-// Et éventuellement Robolectric si tu en as besoin :
+    // Et éventuellement Robolectric si tu en as besoin :
     testImplementation("org.robolectric:robolectric:4.9.2")
-
 }
 
 // Force jvmTarget=17 pour toutes les tâches Kotlin

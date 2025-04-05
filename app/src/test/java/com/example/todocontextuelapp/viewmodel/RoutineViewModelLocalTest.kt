@@ -93,6 +93,7 @@ class RoutineViewModelLocalTest {
             description = "Pour tester l'insertion",
             date = "12/31/2025",
             hour = 10,
+            minute = 0,
             amPm = "AM",
             frequency = "Just for this time"
         )
@@ -109,6 +110,7 @@ class RoutineViewModelLocalTest {
             description = "Desc",
             date = "01/01/2026",
             hour = 8,
+            minute = 0,
             amPm = "PM",
             frequency = "Every day"
         )
@@ -129,6 +131,7 @@ class RoutineViewModelLocalTest {
             description = "Desc",
             date = "02/02/2026",
             hour = 9,
+            minute = 0,
             amPm = "AM",
             frequency = "Once a week"
         )
