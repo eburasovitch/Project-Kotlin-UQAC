@@ -93,6 +93,8 @@ dependencies {
     testImplementation("org.mockito:mockito-core:4.8.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
+    testImplementation("org.mockito:mockito-inline:4.8.0")
+    testImplementation("org.robolectric:robolectric:4.9.2")
 
     // -------------------------------
     // TESTS INSTRUMENTÉS

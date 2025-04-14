@@ -15,7 +15,12 @@ import com.example.todocontextuelapp.navigation.SetupNavGraph
 import com.example.todocontextuelapp.presentation.NotificationScreen
 import com.example.todocontextuelapp.ui.theme.TodoContextuelAppTheme
 import dagger.hilt.android.AndroidEntryPoint
-
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Modifier
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
@@ -61,7 +66,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             TodoContextuelAppTheme {
                 val navController = rememberNavController()
-                SetupNavGraph(navController = navController)
+                Box(modifier = Modifier.padding(WindowInsets.statusBars.asPaddingValues())) {
+                    SetupNavGraph(navController = navController)
+                }
             }
         }
     }
